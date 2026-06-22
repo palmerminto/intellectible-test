@@ -2,12 +2,46 @@
 
 import { ActionIcon, Badge, Group, Loader, Paper, Stack, Text } from '@mantine/core';
 import { IconX } from '@tabler/icons-react';
-import type { Document } from '@/types/document';
-import { documentStatusColor, documentStatusLabel } from '@/components/library/document-status';
+import type { Document, DocumentDisplayStatus } from '@/types/document';
 
 interface DocumentLibraryProps {
   documents: Document[];
   onDismissFailed?: (documentId: string) => void;
+}
+
+function documentStatusLabel(status: DocumentDisplayStatus): string {
+  switch (status) {
+    case 'uploading':
+      return 'Uploading';
+    case 'uploaded':
+      return 'Queued';
+    case 'processing':
+      return 'Processing';
+    case 'ready':
+      return 'Ready';
+    case 'failed':
+      return 'Failed';
+    default:
+      return 'Queued';
+  }
+}
+
+function documentStatusColor(
+  status: DocumentDisplayStatus,
+): 'gray' | 'blue' | 'green' | 'red' {
+  switch (status) {
+    case 'uploading':
+    case 'uploaded':
+      return 'gray';
+    case 'processing':
+      return 'blue';
+    case 'ready':
+      return 'green';
+    case 'failed':
+      return 'red';
+    default:
+      return 'gray';
+  }
 }
 
 function isInProgress(status: Document['status']): boolean {

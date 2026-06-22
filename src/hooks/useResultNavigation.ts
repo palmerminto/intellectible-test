@@ -41,26 +41,19 @@ export function useResultNavigation<T>({
     onSelect?.(results[clampedIndex], clampedIndex);
   }, [clampedIndex, onSelect, results]);
 
-  useHotkeys(
-    'j',
-    () => move(1),
-    { enabled: enabled && results.length > 0, preventDefault: true },
-    [enabled, move, results.length],
-  );
+  const hotkeyOptions = {
+    enabled: enabled && results.length > 0,
+    preventDefault: true,
+    enableOnFormTags: false,
+  } as const;
 
-  useHotkeys(
-    'k',
-    () => move(-1),
-    { enabled: enabled && results.length > 0, preventDefault: true },
-    [enabled, move, results.length],
-  );
-
-  useHotkeys(
-    'enter',
-    () => selectCurrent(),
-    { enabled: enabled && results.length > 0, preventDefault: true },
-    [enabled, selectCurrent, results.length],
-  );
+  useHotkeys('j', () => move(1), hotkeyOptions, [enabled, move, results.length]);
+  useHotkeys('k', () => move(-1), hotkeyOptions, [enabled, move, results.length]);
+  useHotkeys('enter', () => selectCurrent(), hotkeyOptions, [
+    enabled,
+    selectCurrent,
+    results.length,
+  ]);
 
   return {
     selectedIndex: clampedIndex,

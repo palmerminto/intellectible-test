@@ -7,14 +7,14 @@ import { showErrorToast } from '@/lib/notifications';
 
 interface DocumentDropzoneProps {
   onUploadStart?: (filename: string) => string;
+  onUploadComplete?: (optimisticId: string) => void;
   onUploadFailed?: (optimisticId: string, errorMessage: string) => void;
-  onUploaded?: () => void;
 }
 
 export function DocumentDropzone({
   onUploadStart,
+  onUploadComplete,
   onUploadFailed,
-  onUploaded,
 }: DocumentDropzoneProps) {
   const uploadFailedMessage = 'Upload failed';
 
@@ -40,7 +40,9 @@ export function DocumentDropzone({
           continue;
         }
 
-        onUploaded?.();
+        if (optimisticId) {
+          onUploadComplete?.(optimisticId);
+        }
       } catch {
         showErrorToast(uploadFailedMessage);
         if (optimisticId) {

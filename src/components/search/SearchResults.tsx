@@ -5,10 +5,19 @@ import { Badge, Button, Group, Loader, Paper, Stack, Text } from '@mantine/core'
 import { IconCheck, IconPlus } from '@tabler/icons-react';
 import type { SearchResult } from '@/types/search';
 import { useResultNavigation } from '@/hooks/useResultNavigation';
-import { scoreToRelevanceLabel } from '@/lib/relevance';
 import { showAddedToEvidenceToast } from '@/lib/notifications';
 
+function scoreToRelevanceLabel(score: number): string {
+  if (score >= 0.75) {
+    return 'Strong match';
+  }
+
+  return 'Related passage';
+}
+
 export type SearchResultsState = 'idle' | 'searching' | 'results' | 'no-results';
+
+const EMPTY_RESULT_IDS = new Set<string>();
 
 interface SearchResultsProps {
   results: SearchResult[];
@@ -22,7 +31,7 @@ export function SearchResults({
   results,
   state = 'idle',
   enabled = true,
-  addedResultIds = new Set(),
+  addedResultIds = EMPTY_RESULT_IDS,
   onAddToEvidence,
 }: SearchResultsProps) {
   const itemRefs = useRef<Array<HTMLDivElement | null>>([]);

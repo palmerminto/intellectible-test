@@ -66,8 +66,8 @@ To use a hosted project instead of Docker, set `NEXT_PUBLIC_SUPABASE_URL`, `NEXT
 
 Use these query params in the app URL to simulate UI states with dummy API data:
 
-- `demoDocs=ready|processing|failed|mixed`
-- `demoSearch=results|empty|searching|error` (auto-runs a demo search on load)
+- `demoDocs=ready|processing|failed|mixed` (`processing` transitions to `ready` after ~5s)
+- `demoSearch=results|empty|searching|error` (auto-runs a demo search on load; `searching` delays ~2.5s then returns results)
 - `demoEvidence=sample` (pre-populates Collected evidence)
 
 Examples:

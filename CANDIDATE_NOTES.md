@@ -50,5 +50,31 @@ Implemented the UX plan before backend retrieval work. Flow map and acceptance r
 
 ### Still stubbed
 
-- Backend retrieval not wired; search still returns empty until ingestion is implemented.
+- Backend retrieval not wired; search still returns empty until ingestion is implemented (unless demo query params are used).
 - Evidence items remain in browser state, not persisted to `draft_items` yet.
+
+### Demo query params
+
+URL-controlled demo modes for presenting UX without backend wiring:
+
+- `demoDocs=ready|processing|failed|mixed` — library/document status states (`processing` becomes `ready` after ~5s)
+- `demoSearch=results|empty|searching|error` — auto-runs a demo search on load
+- `demoEvidence=sample` — pre-populates Collected evidence
+
+Examples:
+
+- `/?demoDocs=ready&demoSearch=results`
+- `/?demoDocs=mixed&demoSearch=searching&demoEvidence=sample`
+
+### State refactor note
+
+`WorkspacePage` was split into focused hooks so each concern is easier to test and explain in the interview:
+
+- `useDemoParams()` — reads URL demo flags and builds API paths
+- `useDocuments()` — library fetch, polling, and upload status handlers (optimistic rows tracked by upload token, not filename)
+- `useSearch()` — query, search execution, and results state (including auto-run for `demoSearch`)
+- `useEvidenceCollection()` — collected passages and add-to-evidence behaviour
+
+Evidence collection previously tracked `addedResultIds` in a separate `Set`, parallel to `draftItems`. That duplicated source of truth and could drift (for example, demo seed data vs add-to-evidence clicks).
+
+`addedResultIds` is now derived from `draftItems[].resultId`, so the panel and result cards always reflect the same state. Duplicate adds are guarded inside the `setDraftItems` updater.

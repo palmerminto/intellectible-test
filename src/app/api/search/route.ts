@@ -22,7 +22,7 @@ export async function GET(request: Request) {
 
   if (demoSearch === 'searching') {
     await wait(2500);
-    return NextResponse.json({ results: [] satisfies SearchResult[] } satisfies SearchResponse);
+    return NextResponse.json({ results: buildDemoSearchResults(query) } satisfies SearchResponse);
   }
 
   if (demoSearch === 'results') {
