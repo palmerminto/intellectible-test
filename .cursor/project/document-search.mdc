@@ -1,0 +1,48 @@
+---
+description: Document search take-home for Intellectible. Stack, architecture, and conventions.
+alwaysApply: true
+---
+
+# Project: Document Search (Intellectible take-home)
+
+Build a PDF document search feature: drag-drop PDFs, hybrid search across them, results with
+citations, a draft collection panel. ~3 hour prototype. Code must be readable and defensible
+to technical founders, so favour clarity over cleverness and comment the retrieval logic.
+
+## Stack
+- Next.js, App Router, single repo, TypeScript.
+- Backend via Next.js API routes. No separate Python service.
+- Supabase: Postgres + pgvector for chunks/embeddings, Supabase Storage for PDFs.
+- All model calls via OpenRouter (OpenAI-compatible client, base url
+  https://openrouter.ai/api/v1). Read OPENROUTER_API_KEY from env. Never hardcode keys.
+
+## Architecture (keep the RAG pipeline as separate, commented modules)
+- parse: extract per-page text (unpdf or pdf.js). Preserve page numbers.
+- chunk: ~500-800 token chunks with overlap. Tag each chunk {docId, page}.
+- embed: batch chunks to OpenRouter /embeddings, model openai/text-embedding-3-small
+  (1536 dims). The pgvector column dimension must match.
+- index: store vectors in pgvector; build a Postgres full-text index on the same chunks.
+- search: hybrid. Vector cosine + full-text, combined with reciprocal rank fusion. Return
+  snippet + source doc + page.
+
+## Async
+- Upload returns immediately. The document row carries a status: processing -> ready.
+- The frontend polls status. Show per-document progress.
+
+## Draft feature
+- "Add to draft" collects passages with their citations in a side panel.
+- Optional generate step: send only the collected passages + a prompt to an OpenRouter chat
+  model, draft one paragraph, preserve citations. Strictly grounded in the passages, no
+  outside model knowledge.
+
+## Out of scope (do not build; leave a short comment where it would go)
+OCR, table extraction, real queue infra, multi-tenant isolation, rerank. Rerank may be
+written behind a flag only if explicitly asked.
+
+## Conventions
+- Readable over clever. Short comments on the retrieval logic so each module can be
+  explained out loud.
+- Strong UI states: empty, uploading/parsing, ready, results, draft. The prototype should
+  feel good to use.
+- UI copy: direct, no corporate filler, no AI slop. No em dashes.
+- Do not commit secrets. Env for all keys.
