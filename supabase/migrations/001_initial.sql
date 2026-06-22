@@ -29,6 +29,86 @@ create table if not exists chunks (
 
 create index if not exists chunks_document_id_idx on chunks (document_id);
 create index if not exists chunks_search_vector_idx on chunks using gin (search_vector);
+create index if not exists chunks_embedding_idx on chunks using hnsw (embedding vector_cosine_ops);
+
+-- Keep keyword search vectors in sync with chunk content.
+create or replace function chunks_search_vector_trigger()
+returns trigger
+language plpgsql
+as $$
+begin
+  new.search_vector := to_tsvector('english', coalesce(new.content, ''));
+  return new;
+end;
+$$;
+
+drop trigger if exists chunks_search_vector_update on chunks;
+create trigger chunks_search_vector_update
+before insert or update of content on chunks
+for each row
+execute function chunks_search_vector_trigger();
+
+-- Vector similarity search over indexed chunks.
+create or replace function match_chunks_vector(
+  query_embedding vector(1536),
+  match_count int default 10
+)
+returns table (
+  chunk_id uuid,
+  document_id uuid,
+  filename text,
+  content text,
+  page integer,
+  score double precision
+)
+language sql
+stable
+as $$
+  select
+    c.id as chunk_id,
+    c.document_id,
+    d.filename,
+    c.content,
+    c.page,
+    1 - (c.embedding <=> query_embedding) as score
+  from chunks c
+  inner join documents d on d.id = c.document_id
+  where d.status = 'ready'
+    and c.embedding is not null
+  order by c.embedding <=> query_embedding
+  limit match_count;
+$$;
+
+-- Keyword search over indexed chunks.
+create or replace function match_chunks_keyword(
+  query_text text,
+  match_count int default 10
+)
+returns table (
+  chunk_id uuid,
+  document_id uuid,
+  filename text,
+  content text,
+  page integer,
+  score double precision
+)
+language sql
+stable
+as $$
+  select
+    c.id as chunk_id,
+    c.document_id,
+    d.filename,
+    c.content,
+    c.page,
+    ts_rank(c.search_vector, websearch_to_tsquery('english', query_text)) as score
+  from chunks c
+  inner join documents d on d.id = c.document_id
+  where d.status = 'ready'
+    and c.search_vector @@ websearch_to_tsquery('english', query_text)
+  order by score desc
+  limit match_count;
+$$;
 
 create table if not exists drafts (
   id uuid primary key default gen_random_uuid(),

@@ -1,0 +1,64 @@
+---
+description: Vitest conventions for unit, integration, and orchestration tests
+globs: src/**/*.{ts,tsx}
+alwaysApply: false
+---
+
+# Testing Conventions
+
+Use Vitest. Run with `npm run test`.
+
+## What to test
+
+| Code type | Test approach |
+|-----------|---------------|
+| Pure helpers (`*-utils.ts`, formatters, mappers) | Direct unit tests, no mocks |
+| Validation and error branches | Unit tests with explicit inputs |
+| Async orchestrators (routes, `search.ts`, upload pipeline) | Mock external IO; assert calls and returned shape |
+| Real external behaviour (PDF parse, HTTP) | Optional `*.integration.test.ts` |
+
+Add or update tests when changing logic in `src/lib/`, `src/app/api/`, and non-trivial hooks.
+
+## File naming
+
+- Unit tests: colocate as `foo.test.ts` next to `foo.ts`
+- Integration tests: `foo.integration.test.ts` when real network/files are required
+- Do not put test files in React components unless testing component behaviour
+
+## Pure function tests
+
+```typescript
+// src/lib/rag/search-utils.test.ts
+import { mergeWithRrf } from '@/lib/rag/search-utils';
+
+it('boosts chunks that appear in both result lists', () => {
+  const merged = mergeWithRrf(vectorResults, keywordResults);
+  expect(merged[0].chunkId).toBe('b');
+});
+```
+
+Prefer table-driven cases for edge conditions (empty input, short queries, sanitisation).
+
+## IO orchestration tests
+
+Mock at module boundaries (`@/env`, `@/lib/supabase/admin`, `fetch`, third-party parsers). Use `vi.hoisted()` when mock factories need shared spies.
+
+```typescript
+const { rpcMock } = vi.hoisted(() => ({ rpcMock: vi.fn() }));
+vi.mock('@/lib/supabase/admin', () => ({
+  createAdminClient: () => ({ rpc: rpcMock }),
+}));
+```
+
+Test behaviour, not implementation details: returned data, thrown errors, and which external calls were made.
+
+## Coverage expectations
+
+- New pure helpers: tests required
+- Bug fixes: add a regression test when practical
+- UI-only copy/layout tweaks: tests optional
+- Do not add tests that only restate TypeScript types or trivial getters
+
+## Before finishing
+
+Run `npm run test`, `npm run typecheck`, and `npm run lint`.

@@ -78,3 +78,37 @@ Examples:
 Evidence collection previously tracked `addedResultIds` in a separate `Set`, parallel to `draftItems`. That duplicated source of truth and could drift (for example, demo seed data vs add-to-evidence clicks).
 
 `addedResultIds` is now derived from `draftItems[].resultId`, so the panel and result cards always reflect the same state. Duplicate adds are guarded inside the `setDraftItems` updater.
+
+## Phase 3: RAG server modules (done)
+
+Added reusable server-side retrieval helpers under `src/lib/rag/` for PDF parsing, chunking, OpenRouter embeddings, Supabase persistence, and hybrid search. Upload and search routes are not wired yet.
+
+### What we built
+
+- **RAG modules** in `src/lib/rag/`: PDF parsing (`unpdf`), chunking, OpenRouter embeddings, Supabase document/chunk helpers, hybrid search orchestration, and pure search helpers in `search-utils.ts`.
+- **SQL support** for vector/keyword search RPCs, `search_vector` trigger, and an HNSW index on chunk embeddings.
+- **Vitest** test suite for pure helpers and orchestration logic (24 tests across unit and integration cases).
+- **Cursor rules** for pure-function extraction and testing conventions in `.cursor/rules/`.
+
+### Testing
+
+Run the suite with:
+
+```bash
+npm run test
+```
+
+Use `npm run test:watch` during development. Tests are colocated as `*.test.ts` next to source files; real PDF parsing lives in `*.integration.test.ts`.
+
+### Local database note
+
+The search RPCs and `search_vector` trigger were added to [`supabase/migrations/001_initial.sql`](supabase/migrations/001_initial.sql). If your local database was created before this change, reset it to pick up the new SQL:
+
+```bash
+npm run supabase:reset
+```
+
+### Prototype cuts
+
+- Chunk overlap applies within a page, not across page boundaries.
+- Chunk replace deletes existing rows before insert; failed inserts mark the document `failed`.

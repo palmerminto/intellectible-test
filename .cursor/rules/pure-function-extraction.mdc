@@ -1,0 +1,56 @@
+---
+description: Extract pure helpers from IO-heavy modules for clarity and testability
+globs: src/**/*.ts
+alwaysApply: false
+---
+
+# Pure Function Extraction
+
+When implementing or refactoring TypeScript in `src/`, prefer small pure helpers over logic embedded in route handlers, hooks, or service functions.
+
+## Extract when logic is
+
+- deterministic (same input → same output)
+- free of network, filesystem, database, environment, or clock access
+- reusable across routes, modules, or UI layers
+- hard to test because it sits behind mocks
+
+## Keep inline when logic is
+
+- a one-off glue call with no meaningful behaviour to test
+- tightly coupled to a single component render
+- extracting would add indirection without improving clarity
+
+## Placement
+
+- Colocate pure helpers with their feature, e.g. `src/lib/rag/search-utils.ts`
+- Use a `*-utils.ts` suffix for pure helper modules
+- Keep IO orchestration in the main module, e.g. `search.ts` calls Supabase; `search-utils.ts` merges ranks
+
+## Examples from this repo
+
+```typescript
+// ✅ GOOD — pure helper, easy to unit test
+// src/lib/rag/search-utils.ts
+export function mergeWithRrf(vectorResults, keywordResults) { ... }
+
+// ✅ GOOD — route/module orchestrates IO only
+export async function searchDocuments(query: string) {
+  const embedding = await embedTexts([query]);
+  const vectorResults = await matchChunksVector(embedding);
+  return mergeWithRrf(vectorResults, keywordResults);
+}
+```
+
+```typescript
+// ❌ AVOID — ranking logic buried inside an async DB function
+export async function searchDocuments(query: string) {
+  const vectorResults = await matchChunksVector(...);
+  const merged = new Map();
+  vectorResults.forEach((result, rank) => { ... }); // extract this
+}
+```
+
+## Refactor trigger
+
+If you need more than one mock to test business logic, extract the logic into a pure helper first, then test the helper directly.
