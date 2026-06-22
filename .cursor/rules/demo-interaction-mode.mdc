@@ -1,0 +1,35 @@
+---
+description: Standard demo-state simulation for UI interactions
+alwaysApply: true
+---
+
+# Demo Interaction Convention
+
+When backend features are incomplete, provide a consistent way to demo UX flows using URL query params and dummy API responses.
+
+## Default Pattern
+
+- Add URL-controlled demo modes for list/status APIs and interaction APIs.
+- Keep demo behaviour explicit and opt-in via query params.
+- Keep real behaviour as the default when no demo params are set.
+
+## Naming
+
+- Use `demoDocs` for document/library state simulation.
+- Use `demoSearch` for search flow simulation.
+- Use `demoEvidence` for collected evidence panel simulation.
+- Prefer enum-like values such as `ready`, `processing`, `failed`, `mixed`, `results`, `empty`, `searching`, `error`, `sample`.
+
+## Implementation Rules
+
+- Implement demo branching inside route handlers, not in random component mocks.
+- Return deterministic dummy payloads with realistic fields.
+- Support loading-state simulation with short response delays.
+- Show a subtle in-app indicator when demo mode is active.
+- Document supported query params in `README.md` with examples.
+
+## Scope Guardrails
+
+- Do not replace real backend logic with demo logic.
+- Do not leak demo-only params into production defaults.
+- Keep demo utilities lightweight and easy to remove.

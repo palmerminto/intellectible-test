@@ -1,5 +1,6 @@
 export interface DraftItem {
   id: string;
+  resultId?: string;
   contentSnapshot: string;
   sourceFilename: string;
   page: number;

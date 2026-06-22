@@ -6,12 +6,21 @@ import { IconFileTypePdf, IconUpload, IconX } from '@tabler/icons-react';
 import { showErrorToast } from '@/lib/notifications';
 
 interface DocumentDropzoneProps {
+  onUploadStart?: (filename: string) => string;
+  onUploadFailed?: (optimisticId: string, errorMessage: string) => void;
   onUploaded?: () => void;
 }
 
-export function DocumentDropzone({ onUploaded }: DocumentDropzoneProps) {
+export function DocumentDropzone({
+  onUploadStart,
+  onUploadFailed,
+  onUploaded,
+}: DocumentDropzoneProps) {
+  const uploadFailedMessage = 'Upload failed';
+
   const handleDrop = async (files: File[]) => {
     for (const file of files) {
+      const optimisticId = onUploadStart?.(file.name);
       const formData = new FormData();
       formData.append('file', file);
 
@@ -23,13 +32,20 @@ export function DocumentDropzone({ onUploaded }: DocumentDropzoneProps) {
 
         if (!response.ok) {
           const payload = (await response.json().catch(() => ({}))) as { error?: string };
-          showErrorToast(payload.error ?? 'Upload is not implemented yet');
+          const message = payload.error ?? uploadFailedMessage;
+          showErrorToast(message);
+          if (optimisticId) {
+            onUploadFailed?.(optimisticId, message);
+          }
           continue;
         }
 
         onUploaded?.();
       } catch {
-        showErrorToast('Upload failed');
+        showErrorToast(uploadFailedMessage);
+        if (optimisticId) {
+          onUploadFailed?.(optimisticId, uploadFailedMessage);
+        }
       }
     }
   };
@@ -54,10 +70,10 @@ export function DocumentDropzone({ onUploaded }: DocumentDropzoneProps) {
 
         <div>
           <Text size="lg" inline>
-            Drop PDFs here
+            Drop RFPs, amendments, or proposals
           </Text>
-          <Text size="sm" c="dimmed" inline mt={4}>
-            or click to browse. Upload wiring comes next.
+          <Text size="sm" c="dimmed" mt={4}>
+            PDFs up to 25 MB. They will be parsed and made searchable.
           </Text>
         </div>
       </Group>

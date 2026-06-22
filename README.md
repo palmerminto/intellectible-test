@@ -5,7 +5,7 @@ Skeleton Next.js app for the Intellectible take-home: PDF upload, hybrid search,
 ## Stack
 
 - Next.js App Router, TypeScript, `src/` directory
-- Mantine v8 (Spotlight, Dropzone, Notifications)
+- Mantine v8 (Dropzone, Notifications)
 - Supabase (Postgres + pgvector + Storage)
 - `react-hotkeys-hook` for j/k result navigation
 
@@ -61,6 +61,21 @@ To use a hosted project instead of Docker, set `NEXT_PUBLIC_SUPABASE_URL`, `NEXT
 | `POST /api/documents/upload` | Validates PDF, returns 501 (not implemented) |
 | `GET /api/search?q=` | Returns `{ results: [] }` |
 | `GET/POST /api/drafts` | Stub list / create |
+
+## Demo query params
+
+Use these query params in the app URL to simulate UI states with dummy API data:
+
+- `demoDocs=ready|processing|failed|mixed`
+- `demoSearch=results|empty|searching|error` (auto-runs a demo search on load)
+- `demoEvidence=sample` (pre-populates Collected evidence)
+
+Examples:
+
+- `http://localhost:3000/?demoDocs=mixed`
+- `http://localhost:3000/?demoDocs=ready&demoSearch=results`
+- `http://localhost:3000/?demoDocs=ready&demoSearch=results&demoEvidence=sample`
+- `http://localhost:3000/?demoSearch=searching`
 
 ## What is not built yet
 

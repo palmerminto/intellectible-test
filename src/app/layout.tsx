@@ -1,5 +1,4 @@
 import '@mantine/core/styles.css';
-import '@mantine/spotlight/styles.css';
 import '@mantine/dropzone/styles.css';
 import '@mantine/notifications/styles.css';
 

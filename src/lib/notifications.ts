@@ -1,8 +1,8 @@
 import { notifications } from '@mantine/notifications';
 
-export function showAddedToDraftToast(sourceFilename: string, page: number) {
+export function showAddedToEvidenceToast(sourceFilename: string, page: number) {
   notifications.show({
-    title: 'Added to draft',
+    title: 'Added to evidence',
     message: `${sourceFilename}, page ${page}`,
     color: 'green',
   });
