@@ -53,14 +53,18 @@ Open [http://localhost:3000](http://localhost:3000). Supabase Studio is at [http
 
 To use a hosted project instead of Docker, set `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` in `.env.local` and run the migration in the Supabase SQL editor. Use `npx next dev` directly if you do not want the local stack to start.
 
-## API shells
+## API
 
-| Route | Status |
-|-------|--------|
-| `GET /api/documents` | Returns `{ documents: [] }` |
-| `POST /api/documents/upload` | Validates PDF, returns 501 (not implemented) |
-| `GET /api/search?q=` | Returns `{ results: [] }` |
-| `GET/POST /api/drafts` | Stub list / create |
+| Route | Description |
+|-------|-------------|
+| `GET /api/documents` | List persisted documents (or demo data with `demoDocs`) |
+| `POST /api/documents/upload` | Upload and index a PDF |
+| `DELETE /api/documents/[id]` | Delete a document and its indexed chunks |
+| `GET /api/search?q=` | Hybrid search over indexed documents (or demo data with `demoSearch`) |
+| `GET /api/drafts` | List persisted draft collections with evidence items |
+| `POST /api/drafts` | Create a draft collection |
+| `POST /api/drafts/[draftId]/items` | Add a cited passage to a draft |
+| `DELETE /api/drafts/[draftId]/items/[itemId]` | Remove a cited passage from a draft |
 
 ## Demo query params
 
@@ -79,4 +83,4 @@ Examples:
 
 ## What is not built yet
 
-Parse/chunk/embed pipeline, hybrid search, async ingestion, draft persistence, and auth. See [`.cursor/project/DECISIONS.md`](.cursor/project/DECISIONS.md).
+OCR, scanned-PDF support, background ingestion queues, draft generation, item deletion/reordering, auth, and tenant isolation. See [`.cursor/project/DECISIONS.md`](.cursor/project/DECISIONS.md).

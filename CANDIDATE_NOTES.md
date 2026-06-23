@@ -212,4 +212,32 @@ npm run test -- src/lib/document-state-utils.test.ts
 
 - No product-layout redesign; app shell structure is unchanged.
 - No backend behaviour changes for Step 7; this is UI/state-layer polish only.
-- Draft persistence remains deferred to later work (still browser state).
+
+## Phase 8: Draft evidence persistence (done)
+
+Persisted the collected evidence panel to Supabase while keeping the existing instant add-to-evidence UX and browser fallback on save failure.
+
+### What we built
+
+- **Draft helpers** in `src/lib/drafts.ts` and pure mappers in `src/lib/draft-utils.ts` for listing drafts, creating drafts, and inserting `draft_items` rows.
+- **Draft routes**: `GET/POST /api/drafts` and `POST /api/drafts/[draftId]/items` with validation, typed responses, and `404` when a draft is missing.
+- **Evidence hook** (`useEvidenceCollection`): hydrates the active draft on load via `localStorage`, creates a draft on first add, persists items in the background, and keeps local state if persistence fails.
+- **Panel status copy**: lightweight `loading` / `saving` / `saved` / `error` messaging in `DraftPanel`.
+- **Route and helper tests** for draft list/create, add-item validation, UUID vs non-UUID `resultId`, and row mapping.
+
+### Validation
+
+```bash
+npm run test
+npm run lint
+npm run typecheck
+```
+
+Manual happy path: search a ready document, add a passage to evidence, refresh the page, and confirm the passage is still present. `demoEvidence=sample` should still work without persistence.
+
+### Prototype cuts
+
+- No auth-scoped drafts, draft generation, item deletion, or reordering.
+- Active draft id is stored in `localStorage`; there is no multi-draft UI yet.
+- Save failures keep evidence locally and surface a non-blocking error message.
+- RLS is not enabled on app tables yet.

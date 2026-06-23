@@ -1,15 +1,29 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { Badge, Paper, ScrollArea, Stack, Text, Title } from '@mantine/core';
-import type { DraftItem } from '@/types/draft';
+import { ActionIcon, Badge, Group, Paper, ScrollArea, Stack, Text, Title } from '@mantine/core';
+import { IconX } from '@tabler/icons-react';
+import { evidencePersistenceStatusCopy } from '@/lib/draft-utils';
+import type { DraftItem, EvidencePersistenceStatus } from '@/types/draft';
 
 interface DraftPanelProps {
   items: DraftItem[];
   highlightedItemId?: string | null;
+  removingItemIds?: readonly string[];
+  persistenceStatus?: EvidencePersistenceStatus;
+  onRemoveItem?: (itemId: string) => void;
 }
 
-export function DraftPanel({ items, highlightedItemId }: DraftPanelProps) {
+export function DraftPanel({
+  items,
+  highlightedItemId,
+  removingItemIds = [],
+  persistenceStatus = 'idle',
+  onRemoveItem,
+}: DraftPanelProps) {
+  const statusCopy = evidencePersistenceStatusCopy(persistenceStatus);
+  const isErrorStatus =
+    persistenceStatus === 'saveError' || persistenceStatus === 'loadError';
   const itemRefs = useRef<Map<string, HTMLDivElement | null>>(new Map());
 
   useEffect(() => {
@@ -32,6 +46,15 @@ export function DraftPanel({ items, highlightedItemId }: DraftPanelProps) {
         <Text size="sm" c="dimmed">
           Cited passages ready to reuse in your response.
         </Text>
+        {statusCopy ? (
+          <Text
+            size="xs"
+            c={isErrorStatus ? 'red' : 'dimmed'}
+            aria-live="polite"
+          >
+            {statusCopy}
+          </Text>
+        ) : null}
       </Stack>
 
       {items.length === 0 ? (
@@ -51,6 +74,7 @@ export function DraftPanel({ items, highlightedItemId }: DraftPanelProps) {
           <Stack gap="sm" pb="md">
             {items.map((item) => {
               const highlighted = item.id === highlightedItemId;
+              const isRemoving = removingItemIds.includes(item.id);
 
               return (
                 <Paper
@@ -67,7 +91,23 @@ export function DraftPanel({ items, highlightedItemId }: DraftPanelProps) {
                     transition: 'background 0.3s ease, border-color 0.3s ease',
                   }}
                 >
-                  <Text size="sm">{item.contentSnapshot}</Text>
+                  <Group justify="space-between" align="flex-start" wrap="nowrap" gap="xs">
+                    <Text size="sm" flex={1}>
+                      {item.contentSnapshot}
+                    </Text>
+                    <ActionIcon
+                      variant="subtle"
+                      color="gray"
+                      size="sm"
+                      aria-label="Remove evidence"
+                      title="Remove evidence"
+                      loading={isRemoving}
+                      disabled={isRemoving}
+                      onClick={() => onRemoveItem?.(item.id)}
+                    >
+                      <IconX size={14} />
+                    </ActionIcon>
+                  </Group>
                   <Text size="xs" c="dimmed" mt={6}>
                     {item.sourceFilename} · p.{item.page}
                   </Text>

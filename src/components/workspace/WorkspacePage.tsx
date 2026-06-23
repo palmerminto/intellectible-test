@@ -49,8 +49,15 @@ export function WorkspacePage() {
     searchDisabledMessage,
   } = useDocuments(documentsApiPath, { isDemoMode: Boolean(demoDocsMode) });
 
-  const { draftItems, addedResultIds, highlightedItemId, handleAddToEvidence } =
-    useEvidenceCollection(demoEvidenceMode);
+  const {
+    draftItems,
+    addedResultIds,
+    highlightedItemId,
+    removingItemIds,
+    persistenceStatus,
+    handleAddToEvidence,
+    handleRemoveFromEvidence,
+  } = useEvidenceCollection(demoEvidenceMode);
 
   const {
     query,
@@ -78,7 +85,7 @@ export function WorkspacePage() {
     [addedResultIds, handleAddToEvidence],
   );
 
-  const { selectedIndex, setSelectedIndex, moveSelection } = useResultNavigation({
+  const { selectedIndex, setSelectedIndex, selectCurrent, moveSelection } = useResultNavigation({
     results,
     enabled: resultsState === 'results',
     onSelect: handleAddSearchResultToEvidence,
@@ -208,6 +215,12 @@ export function WorkspacePage() {
                     }
 
                     if (event.key === 'Enter' && !event.ctrlKey && !event.metaKey) {
+                      if (resultsState === 'results' && results.length > 0) {
+                        event.preventDefault();
+                        selectCurrent();
+                        return;
+                      }
+
                       handleSearch();
                     }
                   }}
@@ -241,7 +254,13 @@ export function WorkspacePage() {
       </AppShell.Main>
 
       <AppShell.Aside p="md">
-        <DraftPanel items={draftItems} highlightedItemId={highlightedItemId} />
+        <DraftPanel
+          items={draftItems}
+          highlightedItemId={highlightedItemId}
+          removingItemIds={removingItemIds}
+          persistenceStatus={persistenceStatus}
+          onRemoveItem={handleRemoveFromEvidence}
+        />
       </AppShell.Aside>
     </AppShell>
   );

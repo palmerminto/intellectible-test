@@ -27,3 +27,11 @@ export interface CreateDraftResponse {
 export interface AddDraftItemResponse {
   item: DraftItem;
 }
+
+export type EvidencePersistenceStatus =
+  | 'idle'
+  | 'loading'
+  | 'saving'
+  | 'saved'
+  | 'loadError'
+  | 'saveError';
