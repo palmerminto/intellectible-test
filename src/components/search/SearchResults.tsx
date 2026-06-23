@@ -4,8 +4,6 @@ import { useEffect, useRef } from 'react';
 import { Badge, Button, Group, Loader, Paper, Stack, Text } from '@mantine/core';
 import { IconCheck, IconPlus } from '@tabler/icons-react';
 import type { SearchResult } from '@/types/search';
-import { useResultNavigation } from '@/hooks/useResultNavigation';
-import { showAddedToEvidenceToast } from '@/lib/notifications';
 
 function scoreToRelevanceLabel(score: number): string {
   if (score >= 0.75) {
@@ -22,7 +20,8 @@ const EMPTY_RESULT_IDS = new Set<string>();
 interface SearchResultsProps {
   results: SearchResult[];
   state?: SearchResultsState;
-  enabled?: boolean;
+  selectedIndex: number;
+  onSelectedIndexChange: (index: number) => void;
   addedResultIds?: Set<string>;
   onAddToEvidence?: (result: SearchResult) => void;
 }
@@ -30,26 +29,16 @@ interface SearchResultsProps {
 export function SearchResults({
   results,
   state = 'idle',
-  enabled = true,
+  selectedIndex,
+  onSelectedIndexChange,
   addedResultIds = EMPTY_RESULT_IDS,
   onAddToEvidence,
 }: SearchResultsProps) {
   const itemRefs = useRef<Array<HTMLDivElement | null>>([]);
 
   const addToEvidence = (result: SearchResult) => {
-    if (addedResultIds.has(result.id)) {
-      return;
-    }
-
     onAddToEvidence?.(result);
-    showAddedToEvidenceToast(result.filename, result.page);
   };
-
-  const { selectedIndex, setSelectedIndex } = useResultNavigation({
-    results,
-    enabled: enabled && state === 'results',
-    onSelect: addToEvidence,
-  });
 
   useEffect(() => {
     itemRefs.current[selectedIndex]?.scrollIntoView({ block: 'nearest' });
@@ -77,7 +66,7 @@ export function SearchResults({
   if (state === 'idle' || results.length === 0) {
     return (
       <Text size="sm" c="dimmed">
-        Results appear here after you search. j/k to move - Enter to add to evidence.
+        Results appear here after you search. ⌘/Ctrl+j/k to move · Enter to add to evidence.
       </Text>
     );
   }
@@ -89,7 +78,7 @@ export function SearchResults({
           {results.length === 1 ? '1 result' : `${results.length} results`}
         </Text>
         <Text size="xs" c="dimmed">
-          j/k to move - Enter to add to evidence
+          ⌘/Ctrl+j/k to move · Enter to add to evidence
         </Text>
       </Group>
 
@@ -108,7 +97,7 @@ export function SearchResults({
             p="md"
             radius="md"
             aria-selected={selected}
-            onClick={() => setSelectedIndex(index)}
+            onClick={() => onSelectedIndexChange(index)}
             style={{
               cursor: 'pointer',
               borderColor: selected ? 'var(--mantine-color-blue-5)' : undefined,
@@ -150,7 +139,7 @@ export function SearchResults({
                   leftSection={<IconPlus size={14} />}
                   onClick={(event) => {
                     event.stopPropagation();
-                    setSelectedIndex(index);
+                    onSelectedIndexChange(index);
                     addToEvidence(result);
                   }}
                   style={{ flexShrink: 0 }}

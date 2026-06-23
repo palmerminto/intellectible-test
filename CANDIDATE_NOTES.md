@@ -128,7 +128,6 @@ Wired the upload route to Supabase storage and the inline ingestion pipeline, th
 
 ### Still stubbed
 
-- Search still returns empty until hybrid search is wired (unless `demoSearch` is set).
 - Evidence items remain in browser state, not persisted to `draft_items` yet.
 - Ingestion runs inline in the upload request; no background queue yet.
 
@@ -151,3 +150,34 @@ npm run supabase:reset
 - Inline ingestion blocks the upload request until indexing finishes.
 - Delete has no confirmation modal; use × per document or `npm run supabase:reset` for a full wipe.
 - RLS is not enabled on app tables yet; required before any non-local deployment.
+
+## Phase 5: Hybrid search (done)
+
+Wired the search API to the existing RAG retrieval pipeline so real queries return cited results from indexed documents.
+
+### What we built
+
+- **Search route** (`GET /api/search`): validates `q`, preserves all `demoSearch` demo modes, and calls `searchDocuments()` for real queries.
+- **Hybrid retrieval path**: OpenRouter query embedding → pgvector similarity search → Postgres full-text search → reciprocal rank fusion → cited snippets with filename, page, score, and lightweight term highlighting.
+- **Route tests** in `src/app/api/search/route.test.ts` covering validation, demo behaviour, successful real search, and error handling.
+
+### Still stubbed
+
+- Evidence items remain in browser state, not persisted to `draft_items` yet.
+- No reranker, retrieval evaluation set, or OCR for scanned PDFs.
+
+### Validation
+
+```bash
+npm run test
+npm run lint
+npm run typecheck
+```
+
+Manual happy path: upload a text PDF, wait for `ready`, search an exact phrase and a semantic query, confirm results show filename/page/snippet/highlighting and `Add to evidence` works.
+
+### Prototype cuts
+
+- Fixed RRF merge with no cross-encoder reranking.
+- Keyword highlighting uses simple `[term]` markers, not rich HTML markup.
+- Search errors surface a safe message only; provider details stay server-side.
