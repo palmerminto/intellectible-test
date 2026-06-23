@@ -241,3 +241,16 @@ Manual happy path: search a ready document, add a passage to evidence, refresh t
 - Active draft id is stored in `localStorage`; there is no multi-draft UI yet.
 - Save failures keep evidence locally and surface a non-blocking error message.
 - RLS is not enabled on app tables yet.
+
+## Final build summary and production path
+
+The prototype now covers the core workflow: upload a text PDF, parse and chunk it, embed passages through OpenRouter, index them in Supabase Postgres with pgvector/full-text support, run hybrid search with cited snippets, and collect useful passages into persisted evidence.
+
+### Conscious cuts
+
+- **Scanned PDFs/OCR**: not implemented; the parser expects extractable text. Production would route low-text pages through OCR and preserve page-level provenance.
+- **Table extraction**: not implemented; production would detect tables separately, store structured rows/cells, and return table-aware citations rather than flattening all content into prose chunks.
+- **Background ingestion queue**: ingestion currently runs inline during upload. Production would enqueue work with Cloud Tasks or Pub/Sub, process it in a Cloud Run worker, and stream status back through document state.
+- **Tenant isolation/RLS**: local tables are not protected for multi-tenant use yet. Production would add auth, tenant-scoped rows, Supabase RLS policies, storage path isolation, and service-role-only ingestion writes.
+- **Reranking**: search uses reciprocal rank fusion over vector and keyword results only. Production would add a cross-encoder or provider rerank step behind a flag for higher precision on the top candidates.
+- **Retrieval evaluation**: no labelled eval set yet. Production would maintain representative questions and expected citations, then track recall@k, citation accuracy, latency, and failure cases before changing chunking or model settings.
