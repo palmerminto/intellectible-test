@@ -6,7 +6,8 @@ import type { Document, DocumentDisplayStatus } from '@/types/document';
 
 interface DocumentLibraryProps {
   documents: Document[];
-  onDismissFailed?: (documentId: string) => void;
+  removingDocumentIds?: readonly string[];
+  onRemoveDocument?: (documentId: string) => void;
 }
 
 function documentStatusLabel(status: DocumentDisplayStatus): string {
@@ -48,7 +49,15 @@ function isInProgress(status: Document['status']): boolean {
   return status === 'uploading' || status === 'uploaded' || status === 'processing';
 }
 
-export function DocumentLibrary({ documents, onDismissFailed }: DocumentLibraryProps) {
+function canRemoveDocument(status: Document['status']): boolean {
+  return status !== 'uploading';
+}
+
+export function DocumentLibrary({
+  documents,
+  removingDocumentIds = [],
+  onRemoveDocument,
+}: DocumentLibraryProps) {
   if (documents.length === 0) {
     return (
       <Text size="sm" c="dimmed">
@@ -65,14 +74,16 @@ export function DocumentLibrary({ documents, onDismissFailed }: DocumentLibraryP
             <Text size="sm" fw={500} lineClamp={2} flex={1}>
               {document.filename}
             </Text>
-            {document.status === 'failed' ? (
+            {canRemoveDocument(document.status) ? (
               <ActionIcon
                 variant="subtle"
                 color="gray"
                 size="sm"
-                aria-label="Remove"
-                title="Remove"
-                onClick={() => onDismissFailed?.(document.id)}
+                aria-label="Remove document"
+                title="Remove document"
+                loading={removingDocumentIds.includes(document.id)}
+                disabled={removingDocumentIds.includes(document.id)}
+                onClick={() => onRemoveDocument?.(document.id)}
               >
                 <IconX size={14} />
               </ActionIcon>

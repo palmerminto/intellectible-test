@@ -4,6 +4,7 @@ import { Group, Text } from '@mantine/core';
 import { Dropzone, MIME_TYPES } from '@mantine/dropzone';
 import { IconFileTypePdf, IconUpload, IconX } from '@tabler/icons-react';
 import { showErrorToast } from '@/lib/notifications';
+import { MAX_PDF_SIZE_BYTES } from '@/lib/upload/upload-utils';
 
 interface DocumentDropzoneProps {
   onUploadStart?: (filename: string) => string;
@@ -55,7 +56,7 @@ export function DocumentDropzone({
   return (
     <Dropzone
       onDrop={handleDrop}
-      maxSize={25 * 1024 * 1024}
+      maxSize={MAX_PDF_SIZE_BYTES}
       accept={[MIME_TYPES.pdf]}
       multiple
     >

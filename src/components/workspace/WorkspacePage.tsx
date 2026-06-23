@@ -36,9 +36,10 @@ export function WorkspacePage() {
     handleUploadStart,
     handleUploadComplete,
     handleUploadFailed,
-    handleDismissFailed,
+    removingDocumentIds,
+    handleRemoveDocument,
     searchEnabled: documentsReady,
-  } = useDocuments(documentsApiPath);
+  } = useDocuments(documentsApiPath, { isDemoMode: Boolean(demoDocsMode) });
 
   const { draftItems, addedResultIds, highlightedItemId, handleAddToEvidence } =
     useEvidenceCollection(demoEvidenceMode);
@@ -83,7 +84,8 @@ export function WorkspacePage() {
           <ScrollArea flex={1}>
             <DocumentLibrary
               documents={documents}
-              onDismissFailed={handleDismissFailed}
+              removingDocumentIds={removingDocumentIds}
+              onRemoveDocument={handleRemoveDocument}
             />
           </ScrollArea>
         </Stack>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { showErrorToast } from '@/lib/notifications';
 import type { Document } from '@/types/document';
 
 const POLL_INTERVAL_MS = 2500;
@@ -26,8 +27,10 @@ export function hasReadyDocuments(documents: Document[]): boolean {
   return documents.some((doc) => doc.status === 'ready');
 }
 
-export function useDocuments(documentsApiPath: string) {
+export function useDocuments(documentsApiPath: string, options?: { isDemoMode?: boolean }) {
+  const isDemoMode = options?.isDemoMode ?? false;
   const [documents, setDocuments] = useState<Document[]>([]);
+  const [removingDocumentIds, setRemovingDocumentIds] = useState<string[]>([]);
   const pendingUploadIds = useRef(new Set<string>());
 
   const mergeDocuments = useCallback((incoming: Document[]) => {
@@ -129,17 +132,53 @@ export function useDocuments(documentsApiPath: string) {
     );
   }, []);
 
-  const handleDismissFailed = useCallback((documentId: string) => {
-    pendingUploadIds.current.delete(documentId);
-    setDocuments((current) => current.filter((doc) => doc.id !== documentId));
-  }, []);
+  const handleRemoveDocument = useCallback(
+    async (documentId: string) => {
+      if (removingDocumentIds.includes(documentId)) {
+        return;
+      }
+
+      const isOptimistic = documentId.startsWith('optimistic-');
+
+      if (isOptimistic) {
+        pendingUploadIds.current.delete(documentId);
+        setDocuments((current) => current.filter((doc) => doc.id !== documentId));
+        return;
+      }
+
+      if (isDemoMode) {
+        setDocuments((current) => current.filter((doc) => doc.id !== documentId));
+        return;
+      }
+
+      setRemovingDocumentIds((current) => [...current, documentId]);
+
+      try {
+        const response = await fetch(`/api/documents/${documentId}`, { method: 'DELETE' });
+
+        if (!response.ok) {
+          const payload = (await response.json().catch(() => ({}))) as { error?: string };
+          showErrorToast(payload.error ?? 'Failed to delete document');
+          return;
+        }
+
+        setDocuments((current) => current.filter((doc) => doc.id !== documentId));
+      } catch {
+        showErrorToast('Failed to delete document');
+      } finally {
+        setRemovingDocumentIds((current) => current.filter((id) => id !== documentId));
+      }
+    },
+    [isDemoMode, removingDocumentIds],
+  );
 
   return {
     documents,
+    removingDocumentIds,
     handleUploadStart,
     handleUploadComplete,
     handleUploadFailed,
-    handleDismissFailed,
+    handleRemoveDocument,
     searchEnabled: hasReadyDocuments(documents),
   };
 }

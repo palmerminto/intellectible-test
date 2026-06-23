@@ -1,6 +1,96 @@
+import { DocumentNotFoundError } from '@/lib/rag/document-errors';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { formatEmbeddingForPgVector } from '@/lib/rag/vector';
 import type { EmbeddedChunk } from '@/lib/rag/types';
+import type { Document, DocumentStatus } from '@/types/document';
+
+export { DocumentNotFoundError } from '@/lib/rag/document-errors';
+
+/** Row shape returned when listing documents from Supabase. */
+export interface StoredDocumentRow {
+  id: string;
+  filename: string;
+  status: string;
+  size_bytes: number | null;
+  page_count: number | null;
+  error_message: string | null;
+  created_at: string;
+}
+
+const DOCUMENT_STATUSES = new Set<DocumentStatus>(['uploaded', 'processing', 'ready', 'failed']);
+
+/**
+ * Map a persisted document row to the API response shape.
+ */
+export function mapStoredDocumentToApi(row: StoredDocumentRow): Document {
+  const status = DOCUMENT_STATUSES.has(row.status as DocumentStatus)
+    ? (row.status as DocumentStatus)
+    : 'processing';
+
+  return {
+    id: row.id,
+    filename: row.filename,
+    status,
+    sizeBytes: row.size_bytes,
+    pageCount: row.page_count,
+    errorMessage: row.error_message,
+    createdAt: row.created_at,
+  };
+}
+
+/**
+ * List persisted documents, newest first.
+ */
+export async function listDocuments(): Promise<Document[]> {
+  const supabase = createAdminClient();
+
+  const { data, error } = await supabase
+    .from('documents')
+    .select('id, filename, status, size_bytes, page_count, error_message, created_at')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return (data ?? []).map((row) => mapStoredDocumentToApi(row as StoredDocumentRow));
+}
+
+/**
+ * Delete a document, its indexed chunks, and the stored PDF.
+ *
+ * Chunk rows are removed via `on delete cascade`. Storage cleanup is best-effort
+ * after the database row is deleted.
+ */
+export async function deleteDocument(documentId: string): Promise<void> {
+  const supabase = createAdminClient();
+
+  const { data, error: fetchError } = await supabase
+    .from('documents')
+    .select('storage_path')
+    .eq('id', documentId)
+    .maybeSingle();
+
+  if (fetchError) {
+    throw new Error(fetchError.message);
+  }
+
+  if (!data) {
+    throw new DocumentNotFoundError();
+  }
+
+  const { error: deleteError } = await supabase.from('documents').delete().eq('id', documentId);
+
+  if (deleteError) {
+    throw new Error(deleteError.message);
+  }
+
+  const { error: storageError } = await supabase.storage.from('pdfs').remove([data.storage_path]);
+
+  if (storageError) {
+    console.error('Failed to delete PDF from storage', storageError);
+  }
+}
 
 const CHUNK_INSERT_BATCH_SIZE = 100;
 
@@ -23,6 +113,7 @@ export function buildPdfStoragePath(documentId: string, filename: string): strin
  * @returns The newly created document ID.
  */
 export async function createProcessingDocument(input: {
+  id: string;
   filename: string;
   storagePath: string;
   mimeType: string;
@@ -33,6 +124,7 @@ export async function createProcessingDocument(input: {
   const { data, error } = await supabase
     .from('documents')
     .insert({
+      id: input.id,
       filename: input.filename,
       storage_path: input.storagePath,
       mime_type: input.mimeType,
@@ -103,7 +195,7 @@ export async function markDocumentFailed(documentId: string, errorMessage: strin
  * Replace all indexed chunks for a document.
  *
  * Existing rows are deleted first, then new chunk rows are inserted in batches.
- * If insertion fails, the document is marked `failed` before the error is rethrown.
+ * Callers should mark the parent document `failed` if insertion throws.
  *
  * @param documentId - Parent document ID.
  * @param chunks - Embedded chunks to persist.
@@ -132,18 +224,12 @@ export async function replaceDocumentChunks(
     embedding: formatEmbeddingForPgVector(chunk.embedding),
   }));
 
-  try {
-    for (let index = 0; index < rows.length; index += CHUNK_INSERT_BATCH_SIZE) {
-      const batch = rows.slice(index, index + CHUNK_INSERT_BATCH_SIZE);
-      const { error: insertError } = await supabase.from('chunks').insert(batch);
+  for (let index = 0; index < rows.length; index += CHUNK_INSERT_BATCH_SIZE) {
+    const batch = rows.slice(index, index + CHUNK_INSERT_BATCH_SIZE);
+    const { error: insertError } = await supabase.from('chunks').insert(batch);
 
-      if (insertError) {
-        throw new Error(insertError.message);
-      }
+    if (insertError) {
+      throw new Error(insertError.message);
     }
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'Failed to insert document chunks';
-    await markDocumentFailed(documentId, `Indexing failed: ${message}`);
-    throw error;
   }
 }

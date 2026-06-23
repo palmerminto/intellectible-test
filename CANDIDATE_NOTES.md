@@ -111,4 +111,43 @@ npm run supabase:reset
 ### Prototype cuts
 
 - Chunk overlap applies within a page, not across page boundaries.
-- Chunk replace deletes existing rows before insert; failed inserts mark the document `failed`.
+- Chunk replace deletes existing rows before insert; the upload route marks the document `failed` if indexing throws.
+
+## Phase 4: Upload ingestion and document library (done)
+
+Wired the upload route to Supabase storage and the inline ingestion pipeline, then fixed the library so uploaded documents actually appear and can be removed.
+
+### What we built
+
+- **Upload route** (`POST /api/documents/upload`): validates PDFs (MIME, `.pdf` filename, `%PDF` header, 25 MB limit), stores the file in the private `pdfs` bucket, runs parse → chunk → embed → index inline, and marks documents `ready` or `failed`.
+- **Document listing** (`GET /api/documents`): returns persisted documents from Supabase when not in demo mode, newest first.
+- **Document delete** (`DELETE /api/documents/[id]`): removes the document row, cascaded chunks, and stored PDF (storage cleanup is best-effort).
+- **Library UX**: remove button on each document card with in-flight loading guard to prevent double deletes.
+- **Shared upload helpers** in `src/lib/upload/upload-utils.ts` for size limits and PDF validation used by both API and dropzone.
+- **Service-role grants migration** (`002_service_role_grants.sql`) so server-side inserts work against local Supabase.
+
+### Still stubbed
+
+- Search still returns empty until hybrid search is wired (unless `demoSearch` is set).
+- Evidence items remain in browser state, not persisted to `draft_items` yet.
+- Ingestion runs inline in the upload request; no background queue yet.
+
+### Local database note
+
+If uploads fail with `permission denied for table documents`, apply pending migrations:
+
+```bash
+npx supabase migration up
+```
+
+Or reset entirely:
+
+```bash
+npm run supabase:reset
+```
+
+### Prototype cuts
+
+- Inline ingestion blocks the upload request until indexing finishes.
+- Delete has no confirmation modal; use × per document or `npm run supabase:reset` for a full wipe.
+- RLS is not enabled on app tables yet; required before any non-local deployment.
