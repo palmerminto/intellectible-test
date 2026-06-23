@@ -36,9 +36,15 @@ export function DraftPanel({ items, highlightedItemId }: DraftPanelProps) {
 
       {items.length === 0 ? (
         <Paper withBorder p="md" radius="md">
-          <Text size="sm" c="dimmed">
-            Nothing collected yet. Select a result and press Enter, or click Add to evidence.
-          </Text>
+          <Stack gap={6}>
+            <Text size="sm" fw={500}>
+              No evidence collected yet
+            </Text>
+            <Text size="sm" c="dimmed">
+              Search for a passage, then click Add to evidence or press Enter on a selected result.
+              Collected passages stay here for review.
+            </Text>
+          </Stack>
         </Paper>
       ) : (
         <ScrollArea flex={1} type="auto">

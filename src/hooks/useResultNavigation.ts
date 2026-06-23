@@ -55,8 +55,8 @@ export function useResultNavigation<T>({
     enableOnFormTags: false,
   } as const;
 
-  useHotkeys('mod+j, ctrl+j, meta+j', () => move(1), navigationHotkeyOptions, [hotkeyEnabled, move]);
-  useHotkeys('mod+k, ctrl+k, meta+k', () => move(-1), navigationHotkeyOptions, [hotkeyEnabled, move]);
+  useHotkeys('ctrl+j, meta+j', () => move(1), navigationHotkeyOptions, [hotkeyEnabled, move]);
+  useHotkeys('ctrl+k, meta+k', () => move(-1), navigationHotkeyOptions, [hotkeyEnabled, move]);
   useHotkeys('enter', () => selectCurrent(), selectHotkeyOptions, [hotkeyEnabled, selectCurrent]);
 
   return {

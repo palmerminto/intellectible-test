@@ -181,3 +181,35 @@ Manual happy path: upload a text PDF, wait for `ready`, search an exact phrase a
 - Fixed RRF merge with no cross-encoder reranking.
 - Keyword highlighting uses simple `[term]` markers, not rich HTML markup.
 - Search errors surface a safe message only; provider details stay server-side.
+
+## Phase 6: UI state polish and simplification (done)
+
+Refined Step 7 UX states so the app communicates indexing/search readiness more clearly, and reduced status-UI duplication by centralising document status metadata.
+
+### What we built
+
+- **Context-aware search gating**: disabled search messaging now distinguishes between empty library (`Upload a PDF to start indexing.`), in-progress indexing (`Search will unlock when indexing finishes.`), and failed-only states.
+- **Library card clarity**: improved empty state, added status helper text for in-flight statuses (`uploading`, `uploaded`, `processing`), and kept ready metadata (page count + size) and failed error text visible.
+- **Results-state polish**: searching, idle, and no-results views now render in clearer bordered panels with concise guidance while preserving keyboard hints and visible `Add to evidence` actions.
+- **Evidence-panel empty state**: clearer guidance on how to add passages from search results without changing persistence behaviour.
+- **Status logic simplification**: extracted shared status presentation/search-gating helpers to `src/lib/document-state-utils.ts`, and updated `DocumentLibrary` to consume shared metadata rather than repeating label/colour/progress mapping inline.
+
+### Validation
+
+```bash
+npm run lint
+npm run typecheck
+npm run test
+```
+
+Targeted check also run for the new helper tests:
+
+```bash
+npm run test -- src/lib/document-state-utils.test.ts
+```
+
+### Prototype cuts
+
+- No product-layout redesign; app shell structure is unchanged.
+- No backend behaviour changes for Step 7; this is UI/state-layer polish only.
+- Draft persistence remains deferred to later work (still browser state).

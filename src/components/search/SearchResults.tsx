@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import { Badge, Button, Group, Loader, Paper, Stack, Text } from '@mantine/core';
-import { IconCheck, IconPlus } from '@tabler/icons-react';
+import { IconCheck, IconPlus, IconSearch } from '@tabler/icons-react';
 import type { SearchResult } from '@/types/search';
 
 function scoreToRelevanceLabel(score: number): string {
@@ -46,28 +46,51 @@ export function SearchResults({
 
   if (state === 'searching') {
     return (
-      <Group gap="sm">
-        <Loader size="sm" />
-        <Text size="sm" c="dimmed">
-          Searching across your documents...
-        </Text>
-      </Group>
+      <Paper withBorder p="md" radius="md">
+        <Group gap="sm">
+          <Loader size="sm" />
+          <Stack gap={2}>
+            <Text size="sm" fw={500}>
+              Searching across your documents
+            </Text>
+            <Text size="xs" c="dimmed">
+              Matching keywords and semantic meaning in indexed passages.
+            </Text>
+          </Stack>
+        </Group>
+      </Paper>
     );
   }
 
   if (state === 'no-results') {
     return (
-      <Text size="sm" c="dimmed">
-        No matches. Try broader terms or upload more documents.
-      </Text>
+      <Paper withBorder p="md" radius="md">
+        <Stack gap={6}>
+          <Text size="sm" fw={500}>
+            No matches found
+          </Text>
+          <Text size="sm" c="dimmed">
+            Try broader terms, synonyms, or upload more documents to expand the search index.
+          </Text>
+        </Stack>
+      </Paper>
     );
   }
 
   if (state === 'idle' || results.length === 0) {
     return (
-      <Text size="sm" c="dimmed">
-        Results appear here after you search. ⌘/Ctrl+j/k to move · Enter to add to evidence.
-      </Text>
+      <Paper withBorder p="md" radius="md">
+        <Stack gap={6} align="center">
+          <IconSearch size={28} stroke={1.5} color="var(--mantine-color-dimmed)" />
+          <Text size="sm" ta="center">
+            Search results appear here
+          </Text>
+          <Text size="xs" c="dimmed" ta="center">
+            Run a search to see cited passages. Use ⌘/Ctrl+j/k to move between results and Enter
+            to add to evidence.
+          </Text>
+        </Stack>
+      </Paper>
     );
   }
 

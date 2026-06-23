@@ -46,6 +46,7 @@ export function WorkspacePage() {
     removingDocumentIds,
     handleRemoveDocument,
     searchEnabled: documentsReady,
+    searchDisabledMessage,
   } = useDocuments(documentsApiPath, { isDemoMode: Boolean(demoDocsMode) });
 
   const { draftItems, addedResultIds, highlightedItemId, handleAddToEvidence } =
@@ -219,9 +220,9 @@ export function WorkspacePage() {
                   Search
                 </Button>
               </Group>
-              {!searchEnabled ? (
+              {!searchEnabled && searchDisabledMessage ? (
                 <Text size="xs" c="dimmed">
-                  Upload a document and wait for indexing to finish before searching.
+                  {searchDisabledMessage}
                 </Text>
               ) : null}
             </Stack>

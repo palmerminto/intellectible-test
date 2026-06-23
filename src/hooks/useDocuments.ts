@@ -1,6 +1,11 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  getSearchDisabledMessage,
+  hasProcessingDocuments,
+  hasReadyDocuments,
+} from '@/lib/document-state-utils';
 import { showErrorToast } from '@/lib/notifications';
 import type { Document } from '@/types/document';
 
@@ -12,19 +17,6 @@ function normalizeDocument(doc: Document): Document {
     pageCount: doc.pageCount ?? null,
     errorMessage: doc.errorMessage ?? null,
   };
-}
-
-function hasProcessingDocuments(documents: Document[]): boolean {
-  return documents.some(
-    (doc) =>
-      doc.status === 'uploading' ||
-      doc.status === 'uploaded' ||
-      doc.status === 'processing',
-  );
-}
-
-export function hasReadyDocuments(documents: Document[]): boolean {
-  return documents.some((doc) => doc.status === 'ready');
 }
 
 export function useDocuments(documentsApiPath: string, options?: { isDemoMode?: boolean }) {
@@ -180,5 +172,6 @@ export function useDocuments(documentsApiPath: string, options?: { isDemoMode?: 
     handleUploadFailed,
     handleRemoveDocument,
     searchEnabled: hasReadyDocuments(documents),
+    searchDisabledMessage: getSearchDisabledMessage(documents),
   };
 }
